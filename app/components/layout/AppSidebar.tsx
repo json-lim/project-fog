@@ -1,13 +1,7 @@
-import { Link } from "@remix-run/react";
-import {
-  FileText,
-  Home,
-  Users,
-  BarChart3,
-  Settings,
-  Upload,
-} from "lucide-react";
+import { Link, Form } from "@remix-run/react";
+import { FileText, Home, Users, Settings, LogOut } from "lucide-react";
 
+import { Button } from "~/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +11,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
 } from "~/components/ui/sidebar";
 
 // Menu items for medical billing system
@@ -43,7 +38,11 @@ const items = [
   },
 ];
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  username: string;
+}
+
+export function AppSidebar({ username }: AppSidebarProps) {
   return (
     <Sidebar>
       <SidebarContent>
@@ -65,6 +64,19 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <div className="w-full flex items-center justify-between gap-2 px-2">
+          <div className="text-sm text-gray-600">
+            User: <span className="font-medium">{username}</span>
+          </div>
+          <Form method="post" action="/logout">
+            <Button type="submit" variant="ghost" size="sm" className="gap-2">
+              <LogOut />
+              <span>Logout</span>
+            </Button>
+          </Form>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }
