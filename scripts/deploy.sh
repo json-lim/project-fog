@@ -12,6 +12,6 @@ git pull origin main
 npm install
 npm run build
 
-# Start appusing PM2
-pm2 restart myapp
-pm2 start npm --name "myapp" -- start; pm2 save; pm2 startup'
+# Start app using PM2
+pm2 kill
+pm2 start npm --name "myapp" -- start; pm2 save; pm2 startup
