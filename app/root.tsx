@@ -11,6 +11,9 @@ import "./app.css";
 
 export const links: LinksFunction = () => [];
 
+export function meta() {
+  return [{ name: "robots", content: "noindex, nofollow" }];
+}
 export default function App() {
   return (
     <html lang="en">
