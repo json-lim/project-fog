@@ -1,5 +1,12 @@
 import { Link, Form } from "@remix-run/react";
-import { FileText, Home, Users, Settings, LogOut } from "lucide-react";
+import {
+  FileText,
+  Home,
+  Users,
+  Settings,
+  LogOut,
+  BookOpen,
+} from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -30,6 +37,11 @@ const items = [
     title: "Patients",
     url: "/patients",
     icon: Users,
+  },
+  {
+    title: "Glossary",
+    url: "/glossary",
+    icon: BookOpen,
   },
   {
     title: "Settings",

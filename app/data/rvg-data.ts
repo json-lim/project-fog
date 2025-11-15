@@ -17,7 +17,7 @@ import rvgDataJson from "./rvg-data.json";
  * const item = RVG_DATABASE["CA002"];
  * console.log(item.description); // "ANAESTHETIST CONSULTATION..."
  */
-export const RVG_DATABASE: RvgDatabase = rvgDataJson as RvgDatabase;
+export const RVG_DATABASE: RvgDatabase = rvgDataJson as unknown as RvgDatabase;
 
 /**
  * Array of all RVG items for iteration/filtering

@@ -1,7 +1,7 @@
 {
   "CA002": {
     "asa_item_number": "CA002",
-    "section": "Consulations",
+    "section": "Consultations",
     "category": "Consultations and attendances (ASA)",
     "units": 2,
     "description": "ANAESTHETIST CONSULTATION, professional attendance by an anaesthetist in the practice of ANAESTHESIA \n\u2010an attendance of 15 minutes or less in duration",
@@ -18,7 +18,7 @@
   },
   "CA004": {
     "asa_item_number": "CA004",
-    "section": "Consulations",
+    "section": "Consultations",
     "category": "Consultations and attendances (ASA)",
     "units": 4,
     "description": "ANAESTHETIST CONSULTATION, professional attendance by an anaesthetist in the practice of ANAESTHESIA \n\u2010an attendance of more than 15 minutes but not more than 30 minutes in duration",
@@ -35,7 +35,7 @@
   },
   "CA006": {
     "asa_item_number": "CA006",
-    "section": "Consulations",
+    "section": "Consultations",
     "category": "Consultations and attendances (ASA)",
     "units": 6,
     "description": "ANAESTHETIST CONSULTATION, professional attendance by an anaesthetist in the practice of ANAESTHESIA \n\u2010an attendance of more than 30 minutes but not more than 45 minutes in duration",
@@ -52,7 +52,7 @@
   },
   "CA008": {
     "asa_item_number": "CA008",
-    "section": "Consulations",
+    "section": "Consultations",
     "category": "Consultations and attendances (ASA)",
     "units": 8,
     "description": "ANAESTHETIST CONSULTATION, professional attendance by an anaesthetist in the practice of ANAESTHESIA \n\u2010an attendance of more than 45 minutes in duration",
@@ -69,7 +69,7 @@
   },
   "CA045": {
     "asa_item_number": "CA045",
-    "section": "Consulations",
+    "section": "Consultations",
     "category": "Consultations and attendances (ASA)",
     "units": 2,
     "description": "POST-ANAESTHESIA PATIENT CARE following a DAY PROCEDURE"
