@@ -33,7 +33,13 @@ const Index = () => {
   const [preOpEndTime, setPreOpEndTime] = useState<string>("");
   const [opStartTime, setOpStartTime] = useState<string>("");
   const [opEndTime, setOpEndTime] = useState<string>("");
-  const [dollarsPerUnit, setDollarsPerUnit] = useState<number>(0);
+
+  // Keep the raw text separate from the numeric value so users can type freely,
+  // then normalize/validate only once they leave the field.
+  const [dollarsPerUnitInput, setDollarsPerUnitInput] = useState<string>("");
+  const [dollarsPerUnit, setDollarsPerUnit] = useState<number | undefined>(
+    undefined
+  );
 
   const debouncedInvoice = useDebounce(invoice, 500); // Wait 500ms after typing stops
 
@@ -166,7 +172,9 @@ const Index = () => {
         try {
           const asaItem = getTimeLineItem(preOpStart, preOpEnd, "ASA");
           const mbsItem = getTimeLineItem(preOpStart, preOpEnd, "MBS");
-
+          const amount = dollarsPerUnit
+            ? dollarsPerUnit * asaItem.timeUnits
+            : 0;
           const preOpDescription = createTimeUnitsDescription(
             "pre-operative",
             preOpStart,
@@ -178,7 +186,7 @@ const Index = () => {
             date: preOpStart,
             description: preOpDescription.description,
             timeUnitDescription: preOpDescription.timeUnitDescription,
-            amount: dollarsPerUnit * asaItem.timeUnits,
+            amount,
             asaCode: asaItem.itemNumber,
             mbsCode: mbsItem.itemNumber,
             asaTimeUnits: asaItem.timeUnits,
@@ -196,6 +204,9 @@ const Index = () => {
         try {
           const asaItem = getTimeLineItem(opStart, opEnd, "ASA");
           const mbsItem = getTimeLineItem(opStart, opEnd, "MBS");
+          const amount = dollarsPerUnit
+            ? dollarsPerUnit * asaItem.timeUnits
+            : 0;
 
           const opDescription = createTimeUnitsDescription(
             "operative",
@@ -208,7 +219,7 @@ const Index = () => {
             date: opStart,
             description: opDescription.description,
             timeUnitDescription: opDescription.timeUnitDescription,
-            amount: dollarsPerUnit * asaItem.timeUnits,
+            amount,
             asaCode: asaItem.itemNumber,
             mbsCode: mbsItem.itemNumber,
             asaTimeUnits: asaItem.timeUnits,
@@ -313,10 +324,32 @@ const Index = () => {
               <Input
                 type="number"
                 step="0.01"
-                value={dollarsPerUnit}
-                onChange={(e) =>
-                  setDollarsPerUnit(parseFloat(e.target.value) || 0)
-                }
+                value={dollarsPerUnitInput}
+                onChange={(e) => {
+                  setDollarsPerUnitInput(e.target.value);
+                }}
+                onBlur={() => {
+                  const raw = dollarsPerUnitInput.trim();
+
+                  if (raw === "") {
+                    setDollarsPerUnit(undefined);
+                    setDollarsPerUnitInput("");
+                    return;
+                  }
+
+                  const numericValue = Number(raw);
+                  if (Number.isNaN(numericValue)) {
+                    setDollarsPerUnit(undefined);
+                    setDollarsPerUnitInput("");
+                    return;
+                  }
+
+                  const nonNegative = Math.max(numericValue, 0);
+                  const rounded = Math.round(nonNegative * 100) / 100;
+
+                  setDollarsPerUnit(rounded);
+                  setDollarsPerUnitInput(rounded.toString());
+                }}
                 placeholder="0.00"
               />
             </div>
@@ -331,7 +364,12 @@ const Index = () => {
                 <Input
                   type="datetime-local"
                   value={preOpStartTime}
-                  onChange={(e) => setPreOpStartTime(e.target.value)}
+                  onChange={(e) => {
+                    setPreOpStartTime(e.target.value);
+                    if (preOpEndTime < e.target.value || !preOpEndTime) {
+                      setPreOpEndTime(e.target.value);
+                    }
+                  }}
                 />
               </div>
               <div>
@@ -356,7 +394,12 @@ const Index = () => {
                 <Input
                   type="datetime-local"
                   value={opStartTime}
-                  onChange={(e) => setOpStartTime(e.target.value)}
+                  onChange={(e) => {
+                    setOpStartTime(e.target.value);
+                    if (opEndTime < e.target.value || !opEndTime) {
+                      setOpEndTime(e.target.value);
+                    }
+                  }}
                 />
               </div>
               <div>
