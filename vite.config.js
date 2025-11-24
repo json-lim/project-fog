@@ -10,4 +10,20 @@ export default defineConfig({
       "~": path.resolve(__dirname, "./app"),
     },
   },
+  test: {
+    globals: true,
+    environment: "node",
+    include: ["app/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      exclude: [
+        "node_modules/",
+        "app/test/",
+        "**/*.d.ts",
+        "**/*.config.*",
+        "**/mockData",
+      ],
+    },
+  },
 });

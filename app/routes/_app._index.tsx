@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "~/components/ui/input";
 import InvoicePreview from "~/features/invoices/components/InvoicePreview";
-import { Invoice } from "~/features/invoices/types";
+import { Invoice, type TimeUnitDescription } from "~/features/invoices/types";
 import { useDebounce } from "~/hooks/useDebounce";
+import { getTimeLineItem } from "~/features/invoices/utils";
 
 const Index = () => {
   const [invoice, setInvoice] = useState<Invoice>({
@@ -26,6 +27,14 @@ const Index = () => {
     createdAt: new Date(),
     updatedAt: new Date(),
   });
+
+  // Time unit fields
+  const [preOpStartTime, setPreOpStartTime] = useState<string>("");
+  const [preOpEndTime, setPreOpEndTime] = useState<string>("");
+  const [opStartTime, setOpStartTime] = useState<string>("");
+  const [opEndTime, setOpEndTime] = useState<string>("");
+  const [dollarsPerUnit, setDollarsPerUnit] = useState<number>(0);
+
   const debouncedInvoice = useDebounce(invoice, 500); // Wait 500ms after typing stops
 
   const updateInvoice = (updates: Partial<Invoice>) => {
@@ -97,6 +106,129 @@ const Index = () => {
     });
   };
 
+  // Helper to convert datetime-local string to Date
+  const parseDateTime = (dateTimeString: string): Date | null => {
+    if (!dateTimeString) return null;
+    return new Date(dateTimeString);
+  };
+
+  // Helper to format time for description
+  const formatTimeForDescription = (date: Date): string => {
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  // Helper to extract duration chunk from description
+  const extractDurationChunk = (description: string): string => {
+    // Description format: "00:01 HOURS TO 00:15 HOURS from ..."
+    const match = description.match(/^([\d:]+ HOURS TO [\d:]+ HOURS)/);
+    return match ? match[1] : "";
+  };
+
+  // Helper to create structured time units description
+  const createTimeUnitsDescription = (
+    type: "pre-operative" | "operative",
+    startTime: Date,
+    endTime: Date,
+    asaItemDescription: string,
+    timeUnits: number
+  ): { description: string; timeUnitDescription: TimeUnitDescription } => {
+    const timeRange = `${formatTimeForDescription(startTime)} - ${formatTimeForDescription(endTime)}`;
+    const durationChunk = extractDurationChunk(asaItemDescription);
+    return {
+      description: `Time units (${type})`,
+      timeUnitDescription: {
+        type,
+        timeRange,
+        units: timeUnits,
+        durationChunk,
+      },
+    };
+  };
+
+  // Generate time line items when times are filled
+  useEffect(() => {
+    setInvoice((prev) => {
+      // Filter out existing time unit line items (they start with "Time units")
+      const nonTimeItems = prev.lineItems.filter(
+        (item) => !item.description.startsWith("Time units")
+      );
+
+      const newLineItems = [...nonTimeItems];
+
+      // Pre-operative time units
+      const preOpStart = parseDateTime(preOpStartTime);
+      const preOpEnd = parseDateTime(preOpEndTime);
+      if (preOpStart && preOpEnd && preOpEnd > preOpStart) {
+        try {
+          const asaItem = getTimeLineItem(preOpStart, preOpEnd, "ASA");
+          const mbsItem = getTimeLineItem(preOpStart, preOpEnd, "MBS");
+
+          const preOpDescription = createTimeUnitsDescription(
+            "pre-operative",
+            preOpStart,
+            preOpEnd,
+            asaItem.description,
+            asaItem.timeUnits
+          );
+          newLineItems.push({
+            date: preOpStart,
+            description: preOpDescription.description,
+            timeUnitDescription: preOpDescription.timeUnitDescription,
+            amount: dollarsPerUnit * asaItem.timeUnits,
+            asaCode: asaItem.itemNumber,
+            mbsCode: mbsItem.itemNumber,
+            asaTimeUnits: asaItem.timeUnits,
+            mbsTimeUnits: mbsItem.timeUnits,
+          });
+        } catch (error) {
+          console.error("Error generating pre-operative time units:", error);
+        }
+      }
+
+      // Operative time units
+      const opStart = parseDateTime(opStartTime);
+      const opEnd = parseDateTime(opEndTime);
+      if (opStart && opEnd && opEnd > opStart) {
+        try {
+          const asaItem = getTimeLineItem(opStart, opEnd, "ASA");
+          const mbsItem = getTimeLineItem(opStart, opEnd, "MBS");
+
+          const opDescription = createTimeUnitsDescription(
+            "operative",
+            opStart,
+            opEnd,
+            asaItem.description,
+            asaItem.timeUnits
+          );
+          newLineItems.push({
+            date: opStart,
+            description: opDescription.description,
+            timeUnitDescription: opDescription.timeUnitDescription,
+            amount: dollarsPerUnit * asaItem.timeUnits,
+            asaCode: asaItem.itemNumber,
+            mbsCode: mbsItem.itemNumber,
+            asaTimeUnits: asaItem.timeUnits,
+            mbsTimeUnits: mbsItem.timeUnits,
+          });
+        } catch (error) {
+          console.error("Error generating operative time units:", error);
+        }
+      }
+
+      const newTotal = newLineItems.reduce((sum, item) => sum + item.amount, 0);
+      return {
+        ...prev,
+        lineItems: newLineItems,
+        totalAmount: newTotal,
+        updatedAt: new Date(),
+      };
+    });
+  }, [preOpStartTime, preOpEndTime, opStartTime, opEndTime, dollarsPerUnit]);
+
   return (
     <div className="w-full h-full">
       <h1 className="text-4xl font-bold mb-6">Invoice Generator</h1>
@@ -166,6 +298,77 @@ const Index = () => {
                 onChange={(e) => updateDoctor({ lastName: e.target.value })}
                 placeholder="Smith"
               />
+            </div>
+          </div>
+
+          {/* Time Units */}
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold">Time Units</h2>
+
+            {/* Dollars per Unit */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Dollars per Unit ($)
+              </label>
+              <Input
+                type="number"
+                step="0.01"
+                value={dollarsPerUnit}
+                onChange={(e) =>
+                  setDollarsPerUnit(parseFloat(e.target.value) || 0)
+                }
+                placeholder="0.00"
+              />
+            </div>
+
+            {/* Pre-operative Time */}
+            <div className="p-4 border rounded-lg space-y-2">
+              <h3 className="text-md font-medium">Pre-operative</h3>
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  Start Time
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={preOpStartTime}
+                  onChange={(e) => setPreOpStartTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  End Time
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={preOpEndTime}
+                  onChange={(e) => setPreOpEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Operative Time */}
+            <div className="p-4 border rounded-lg space-y-2">
+              <h3 className="text-md font-medium">Operative</h3>
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  Start Time
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={opStartTime}
+                  onChange={(e) => setOpStartTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  End Time
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={opEndTime}
+                  onChange={(e) => setOpEndTime(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 

@@ -85,14 +85,30 @@ const styles = StyleSheet.create({
     borderBottomColor: "#e5e7eb",
   },
   tableColDate: {
-    width: "20%",
+    width: "12%",
+    paddingLeft: 8,
+    paddingRight: 8,
   },
   tableColDescription: {
-    width: "60%",
+    width: "47%",
+    paddingLeft: 8,
+    paddingRight: 8,
+  },
+  tableColASA: {
+    width: "12%",
+    paddingLeft: 8,
+    paddingRight: 8,
+  },
+  tableColMBS: {
+    width: "12%",
+    paddingLeft: 8,
+    paddingRight: 8,
   },
   tableColAmount: {
-    width: "20%",
+    width: "5%",
     textAlign: "right",
+    paddingLeft: 8,
+    paddingRight: 8,
   },
   tableHeaderText: {
     fontSize: 10,
@@ -146,11 +162,11 @@ const styles = StyleSheet.create({
 
 // Helper function to format date
 const formatDate = (date: Date): string => {
-  return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const d = new Date(date);
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${month}/${day}/${year}`;
 };
 
 // Helper function to format currency
@@ -197,6 +213,12 @@ const InvoiceDocument = ({ invoice }: { invoice: Invoice }) => (
           <View style={styles.tableColDescription}>
             <Text style={styles.tableHeaderText}>Description</Text>
           </View>
+          <View style={styles.tableColASA}>
+            <Text style={styles.tableHeaderText}>ASA Item</Text>
+          </View>
+          <View style={styles.tableColMBS}>
+            <Text style={styles.tableHeaderText}>MBS Item</Text>
+          </View>
           <View style={styles.tableColAmount}>
             <Text style={styles.tableHeaderText}>Amount</Text>
           </View>
@@ -209,7 +231,48 @@ const InvoiceDocument = ({ invoice }: { invoice: Invoice }) => (
               <Text style={styles.tableCellText}>{formatDate(item.date)}</Text>
             </View>
             <View style={styles.tableColDescription}>
-              <Text style={styles.tableCellText}>{item.description}</Text>
+              {item.timeUnitDescription ? (
+                <View>
+                  <Text style={styles.tableCellText}>{item.description}</Text>
+                  <Text
+                    style={[
+                      styles.tableCellText,
+                      { fontSize: 10, color: "#6b7280", marginTop: 2 },
+                    ]}
+                  >
+                    {item.timeUnitDescription.timeRange}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.tableCellText,
+                      { fontSize: 10, color: "#6b7280", marginTop: 2 },
+                    ]}
+                  >
+                    Units: {item.timeUnitDescription.units} |{" "}
+                    {item.timeUnitDescription.durationChunk}
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.tableCellText}>{item.description}</Text>
+                  {item.asaTimeUnits && (
+                    <Text
+                      style={[
+                        styles.tableCellText,
+                        { fontSize: 9, color: "#6b7280", marginTop: 2 },
+                      ]}
+                    >
+                      Units: {item.asaTimeUnits}
+                    </Text>
+                  )}
+                </>
+              )}
+            </View>
+            <View style={styles.tableColASA}>
+              <Text style={styles.tableCellText}>{item.asaCode || "-"}</Text>
+            </View>
+            <View style={styles.tableColMBS}>
+              <Text style={styles.tableCellText}>{item.mbsCode || "-"}</Text>
             </View>
             <View style={styles.tableColAmount}>
               <Text style={styles.tableCellText}>
