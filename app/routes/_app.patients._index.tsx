@@ -1,25 +1,70 @@
+import { useNavigate } from "@remix-run/react";
+import { PATIENTS } from "~/data/patients";
+
+const formatDate = (isoDate: string) => {
+  return new Date(isoDate).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
 export default function PatientsIndex() {
+  const navigate = useNavigate();
+
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Patients</h1>
-
-      <div className="rounded-lg border bg-card p-6">
-        <p className="text-muted-foreground mb-4">
-          View and manage patient records
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Patients</h1>
+        <p className="text-muted-foreground">
+          View, search, and manage your patient records
         </p>
+      </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="p-4 border rounded-md">
-            <h3 className="font-semibold mb-1">John Doe</h3>
-            <p className="text-sm text-muted-foreground">DOB: 01/15/1980</p>
-            <p className="text-sm text-muted-foreground">ID: PT-001</p>
+      <div className="rounded-lg border bg-card">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">
+              Total patients
+            </p>
+            <p className="text-2xl font-semibold">{PATIENTS.length}</p>
           </div>
+        </div>
 
-          <div className="p-4 border rounded-md">
-            <h3 className="font-semibold mb-1">Jane Smith</h3>
-            <p className="text-sm text-muted-foreground">DOB: 03/22/1975</p>
-            <p className="text-sm text-muted-foreground">ID: PT-002</p>
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b bg-muted/40 text-sm text-muted-foreground">
+                <th className="px-6 py-3 font-medium">ID</th>
+                <th className="px-6 py-3 font-medium">Name</th>
+                <th className="px-6 py-3 font-medium">Date of birth</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              {PATIENTS.map((patient) => (
+                <tr
+                  key={patient.id}
+                  className="cursor-pointer border-b transition hover:bg-muted/50"
+                  onClick={() => navigate(`/patients/${patient.id}`)}
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      navigate(`/patients/${patient.id}`);
+                    }
+                  }}
+                  role="button"
+                  aria-label={`View details for ${patient.name}`}
+                >
+                  <td className="px-6 py-4 font-medium">{patient.id}</td>
+                  <td className="px-6 py-4">{patient.name}</td>
+                  <td className="px-6 py-4">
+                    {formatDate(patient.dateOfBirth)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
