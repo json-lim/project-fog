@@ -6,6 +6,7 @@ import {
   Settings,
   LogOut,
   BookOpen,
+  Calculator,
 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
@@ -50,6 +51,19 @@ const items = [
   },
 ];
 
+const developmentItems = [
+  {
+    title: "Glossary",
+    url: "/glossary",
+    icon: BookOpen,
+  },
+  {
+    title: "Time Unit Calculator",
+    url: "/time",
+    icon: Calculator,
+  },
+];
+
 interface AppSidebarProps {
   username: string;
 }
@@ -63,6 +77,23 @@ export function AppSidebar({ username }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <Link to={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Development</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {developmentItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <Link to={item.url}>

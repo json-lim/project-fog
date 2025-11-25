@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { RVG_ITEMS } from "~/data/rvg-data";
-import { useGlossaryData } from "~/hooks/useGlossaryData";
-import { useGlossaryNavigation } from "~/hooks/useGlossaryNavigation";
+import {
+  useGlossaryData,
+  useGlossaryNavigation,
+} from "~/features/glossary/hooks";
 import { GlossarySidebar } from "~/features/glossary/components/GlossarySidebar";
 import { GlossarySearch } from "~/features/glossary/components/GlossarySearch";
 import { GlossarySection } from "~/features/glossary/components/GlossarySection";

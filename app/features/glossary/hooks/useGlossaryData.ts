@@ -84,4 +84,3 @@ export function useGlossaryData(searchQuery: string) {
     debouncedSearch,
   };
 }
-

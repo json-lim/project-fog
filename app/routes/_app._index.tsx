@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Input } from "~/components/ui/input";
 import InvoicePreview from "~/features/invoices/components/InvoicePreview";
-import { Invoice, type TimeUnitDescription } from "~/features/invoices/types";
+import { Invoice } from "~/features/invoices/types";
 import { useDebounce } from "~/hooks/useDebounce";
-import { getTimeLineItem } from "~/features/invoices/utils";
+import { useDollarsPerUnit, useTimeUnits } from "~/features/invoices/hooks";
 
 const Index = () => {
   const [invoice, setInvoice] = useState<Invoice>({
@@ -34,11 +34,24 @@ const Index = () => {
   const [opStartTime, setOpStartTime] = useState<string>("");
   const [opEndTime, setOpEndTime] = useState<string>("");
 
-  // Keep the raw text separate from the numeric value so users can type freely,
-  // then normalize/validate only once they leave the field.
-  const [dollarsPerUnitInput, setDollarsPerUnitInput] = useState<string>("");
-  const [dollarsPerUnit, setDollarsPerUnit] = useState<number | undefined>(
-    undefined
+  const {
+    dollarsPerUnitInput,
+    dollarsPerUnit,
+    setDollarsPerUnitInput,
+    handleBlur: handleDollarsPerUnitBlur,
+  } = useDollarsPerUnit();
+
+  const preOpResults = useTimeUnits(
+    preOpStartTime,
+    preOpEndTime,
+    "pre-operative",
+    dollarsPerUnit
+  );
+  const opResults = useTimeUnits(
+    opStartTime,
+    opEndTime,
+    "operative",
+    dollarsPerUnit
   );
 
   const debouncedInvoice = useDebounce(invoice, 500); // Wait 500ms after typing stops
@@ -112,49 +125,6 @@ const Index = () => {
     });
   };
 
-  // Helper to convert datetime-local string to Date
-  const parseDateTime = (dateTimeString: string): Date | null => {
-    if (!dateTimeString) return null;
-    return new Date(dateTimeString);
-  };
-
-  // Helper to format time for description
-  const formatTimeForDescription = (date: Date): string => {
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
-
-  // Helper to extract duration chunk from description
-  const extractDurationChunk = (description: string): string => {
-    // Description format: "00:01 HOURS TO 00:15 HOURS from ..."
-    const match = description.match(/^([\d:]+ HOURS TO [\d:]+ HOURS)/);
-    return match ? match[1] : "";
-  };
-
-  // Helper to create structured time units description
-  const createTimeUnitsDescription = (
-    type: "pre-operative" | "operative",
-    startTime: Date,
-    endTime: Date,
-    asaItemDescription: string,
-    timeUnits: number
-  ): { description: string; timeUnitDescription: TimeUnitDescription } => {
-    const timeRange = `${formatTimeForDescription(startTime)} - ${formatTimeForDescription(endTime)}`;
-    const durationChunk = extractDurationChunk(asaItemDescription);
-    return {
-      description: `Time units (${type})`,
-      timeUnitDescription: {
-        type,
-        timeRange,
-        units: timeUnits,
-        durationChunk,
-      },
-    };
-  };
-
   // Generate time line items when times are filled
   useEffect(() => {
     setInvoice((prev) => {
@@ -166,68 +136,31 @@ const Index = () => {
       const newLineItems = [...nonTimeItems];
 
       // Pre-operative time units
-      const preOpStart = parseDateTime(preOpStartTime);
-      const preOpEnd = parseDateTime(preOpEndTime);
-      if (preOpStart && preOpEnd && preOpEnd > preOpStart) {
-        try {
-          const asaItem = getTimeLineItem(preOpStart, preOpEnd, "ASA");
-          const mbsItem = getTimeLineItem(preOpStart, preOpEnd, "MBS");
-          const amount = dollarsPerUnit
-            ? dollarsPerUnit * asaItem.timeUnits
-            : 0;
-          const preOpDescription = createTimeUnitsDescription(
-            "pre-operative",
-            preOpStart,
-            preOpEnd,
-            asaItem.description,
-            asaItem.timeUnits
-          );
-          newLineItems.push({
-            date: preOpStart,
-            description: preOpDescription.description,
-            timeUnitDescription: preOpDescription.timeUnitDescription,
-            amount,
-            asaCode: asaItem.itemNumber,
-            mbsCode: mbsItem.itemNumber,
-            asaTimeUnits: asaItem.timeUnits,
-            mbsTimeUnits: mbsItem.timeUnits,
-          });
-        } catch (error) {
-          console.error("Error generating pre-operative time units:", error);
-        }
+      if (preOpResults) {
+        newLineItems.push({
+          date: new Date(preOpStartTime),
+          description: preOpResults.description,
+          timeUnitDescription: preOpResults.timeUnitDescription,
+          amount: preOpResults.amount,
+          asaCode: preOpResults.asaItem.itemNumber,
+          mbsCode: preOpResults.mbsItem.itemNumber,
+          asaTimeUnits: preOpResults.asaItem.timeUnits,
+          mbsTimeUnits: preOpResults.mbsItem.timeUnits,
+        });
       }
 
       // Operative time units
-      const opStart = parseDateTime(opStartTime);
-      const opEnd = parseDateTime(opEndTime);
-      if (opStart && opEnd && opEnd > opStart) {
-        try {
-          const asaItem = getTimeLineItem(opStart, opEnd, "ASA");
-          const mbsItem = getTimeLineItem(opStart, opEnd, "MBS");
-          const amount = dollarsPerUnit
-            ? dollarsPerUnit * asaItem.timeUnits
-            : 0;
-
-          const opDescription = createTimeUnitsDescription(
-            "operative",
-            opStart,
-            opEnd,
-            asaItem.description,
-            asaItem.timeUnits
-          );
-          newLineItems.push({
-            date: opStart,
-            description: opDescription.description,
-            timeUnitDescription: opDescription.timeUnitDescription,
-            amount,
-            asaCode: asaItem.itemNumber,
-            mbsCode: mbsItem.itemNumber,
-            asaTimeUnits: asaItem.timeUnits,
-            mbsTimeUnits: mbsItem.timeUnits,
-          });
-        } catch (error) {
-          console.error("Error generating operative time units:", error);
-        }
+      if (opResults) {
+        newLineItems.push({
+          date: new Date(opStartTime),
+          description: opResults.description,
+          timeUnitDescription: opResults.timeUnitDescription,
+          amount: opResults.amount,
+          asaCode: opResults.asaItem.itemNumber,
+          mbsCode: opResults.mbsItem.itemNumber,
+          asaTimeUnits: opResults.asaItem.timeUnits,
+          mbsTimeUnits: opResults.mbsItem.timeUnits,
+        });
       }
 
       const newTotal = newLineItems.reduce((sum, item) => sum + item.amount, 0);
@@ -238,7 +171,7 @@ const Index = () => {
         updatedAt: new Date(),
       };
     });
-  }, [preOpStartTime, preOpEndTime, opStartTime, opEndTime, dollarsPerUnit]);
+  }, [preOpResults, opResults, preOpStartTime, opStartTime]);
 
   return (
     <div className="w-full h-full">
@@ -325,31 +258,8 @@ const Index = () => {
                 type="number"
                 step="0.01"
                 value={dollarsPerUnitInput}
-                onChange={(e) => {
-                  setDollarsPerUnitInput(e.target.value);
-                }}
-                onBlur={() => {
-                  const raw = dollarsPerUnitInput.trim();
-
-                  if (raw === "") {
-                    setDollarsPerUnit(undefined);
-                    setDollarsPerUnitInput("");
-                    return;
-                  }
-
-                  const numericValue = Number(raw);
-                  if (Number.isNaN(numericValue)) {
-                    setDollarsPerUnit(undefined);
-                    setDollarsPerUnitInput("");
-                    return;
-                  }
-
-                  const nonNegative = Math.max(numericValue, 0);
-                  const rounded = Math.round(nonNegative * 100) / 100;
-
-                  setDollarsPerUnit(rounded);
-                  setDollarsPerUnitInput(rounded.toString());
-                }}
+                onChange={(e) => setDollarsPerUnitInput(e.target.value)}
+                onBlur={handleDollarsPerUnitBlur}
                 placeholder="0.00"
               />
             </div>

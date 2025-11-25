@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getTimeLineItem } from "./utils";
+import { getTimeLineItem } from "./timeCalculations";
 
 /**
  * Test suite for time unit calculation
